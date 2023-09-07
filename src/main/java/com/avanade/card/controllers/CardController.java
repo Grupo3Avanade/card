@@ -3,6 +3,7 @@ package com.avanade.card.controllers;
 import com.avanade.card.payloads.request.CardRequest;
 import com.avanade.card.payloads.response.CardResponse;
 import com.avanade.card.services.CardService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,9 +18,8 @@ public class CardController {
         this.service = service;
     }
 
-
     @PostMapping
-    public CardResponse create(@RequestBody CardRequest dto){
+    public CardResponse create(@RequestBody @Valid CardRequest dto){
         return service.create(dto);
     }
 
@@ -34,7 +34,7 @@ public class CardController {
     }
 
     @PutMapping("/{id}")
-    public CardResponse edit(@PathVariable UUID id, @RequestBody CardRequest cartaoRequest){
+    public CardResponse edit(@PathVariable UUID id, @RequestBody @Valid CardRequest cartaoRequest){
         return service.update(id, cartaoRequest);
     }
 
