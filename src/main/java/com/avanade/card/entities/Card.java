@@ -1,7 +1,9 @@
 package com.avanade.card.entities;
 
 import com.avanade.card.enums.CardType;
+import com.avanade.card.payloads.response.CardResponse;
 import jakarta.persistence.*;
+import jakarta.persistence.metamodel.IdentifiableType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -40,5 +42,23 @@ public class Card {
     private Integer closingDay;
 
     private Boolean isDependent = Boolean.FALSE;
+
+    //TODO mudar \/
+    private UUID user;
+
+    public CardResponse toResponse() {
+        return new CardResponse(
+                this.id,
+                this.number,
+                this.holderName,
+                this.expiry,
+                this.securityCode,
+                this.type,
+                this.bankAccountId,
+                this.isDependent,
+                this.closingDay,
+                this.user
+        );
+    }
 
 }
