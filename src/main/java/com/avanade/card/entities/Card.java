@@ -42,7 +42,7 @@ public class Card {
 
     private Boolean isDependent = Boolean.FALSE;
 
-    //TODO mudar \/
+    @Column(nullable = false)
     private UUID userId;
 
     public CardResponse toResponse() {

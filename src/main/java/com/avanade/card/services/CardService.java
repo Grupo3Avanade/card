@@ -4,9 +4,12 @@ import com.avanade.card.entities.Card;
 import com.avanade.card.enums.CardType;
 import com.avanade.card.exceptions.DatabaseException;
 import com.avanade.card.exceptions.ResourceNotFoundException;
+import com.avanade.card.exceptions.UserFetchException;
+import com.avanade.card.httpcliente.UserHttpClient;
 import com.avanade.card.payloads.request.CardRequest;
 import com.avanade.card.payloads.response.CardResponse;
 import com.avanade.card.repositories.CardRepository;
+import feign.FeignException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -22,13 +25,16 @@ public class CardService {
 
     private static Random random;
     private final CardRepository repository;
+    private UserHttpClient userHttpClient;
 
-    public CardService(CardRepository repository) {
+    public CardService(CardRepository repository, UserHttpClient userHttpClient) {
         this.repository = repository;
+        this.userHttpClient = userHttpClient;
     }
 
-    //TODO create
     public CardResponse create(CardRequest requestCard) {
+
+        checkIfUserExists(requestCard.userId());
 
         String accountNumber = prepareRandomNumber(5);
         String securityCode = prepareRandomNumber(4);
@@ -36,10 +42,7 @@ public class CardService {
         CardType cardType = generateRandomCardType();
         LocalDate cardExpirationDate = LocalDate.now().plusYears(5);
 
-        //User user = getUser(requestCard);
-
         Card card = new Card();
-        //card.setUser(user);
         card.setHolderName(requestCard.holderName());
         card.setExpiry(cardExpirationDate);
         card.setSecurityCode(securityCode);
@@ -48,8 +51,9 @@ public class CardService {
         card.setType(cardType);
         card.setIsDependent(requestCard.isDependent());
         card.setClosingDay(requestCard.closingDay());
+        card.setUserId(requestCard.userId());
+        saveOrFail(card);
 
-        //saveOrFail(card);
         return card.toResponse();
     }
 
@@ -59,28 +63,21 @@ public class CardService {
                 .map(Card::toResponse).collect(Collectors.toList());
     }
 
-    public List<Card> findAllByClosingDay(Integer closingDay){
-        return repository.findAllByClosingDay(closingDay);
-    }
-
     public CardResponse getOne(UUID id) {
         return findOrFailById(id).toResponse();
     }
 
-    //TODO update
     public CardResponse update(UUID id, CardRequest requestCard) {
-//        Card card = findOrFailById(id);
-//        User user = getUser(requestCard);
-//
-//        card.setUser(user);
-//        card.setHolderName(requestCard.holderName());
-//        card.setIsDependent(requestCard.isDependent());
-//        card.setExpiry(requestCard.expirationDate());
-//
-//        saveOrFail(card);
-//
-//        return card.toResponse();
-        return null;
+        Card card = findOrFailById(id);
+
+        card.setUserId(requestCard.userId());
+        card.setHolderName(requestCard.holderName());
+        card.setIsDependent(requestCard.isDependent());
+        card.setExpiry(requestCard.expirationDate());
+
+        saveOrFail(card);
+
+        return card.toResponse();
     }
 
     public String delete(UUID id) {
@@ -121,6 +118,14 @@ public class CardService {
         random = getRandom();
         int index = random.nextInt(cardTypes.length);
         return cardTypes[index];
+    }
+
+    private void checkIfUserExists(UUID userId){
+        try{
+            userHttpClient.getUserById(userId);
+        }catch (FeignException e){
+            throw new UserFetchException("User not found.");
+        }
     }
 
 
